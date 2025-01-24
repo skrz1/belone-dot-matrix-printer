@@ -1,0 +1,4 @@
+contrast = 0
+brightness = 0
+invert = 0
+power = 1
