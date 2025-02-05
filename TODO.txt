@@ -1,5 +1,7 @@
+Add pygame GUI.
+
+DONE:
 Add possibility to print photos of different size than portrait mode 4724x6780 px (200x287 mm at 600 ppi).
 Add functionality to "system.txt"
 Add additional features to "command.txt"
 Add an option to print multiple pages one after another.
-Add pygame GUI.
