@@ -1,1 +1,1 @@
-filename = bebok.jpg
+filename = 

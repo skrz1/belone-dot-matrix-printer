@@ -1,0 +1,3 @@
+HS_init_path = C:\Users\Artur\Documents\python TEST2\printer\software\memory\buffer\hamster.HS.txt
+HS_output_path = C:\Users\Artur\Documents\python TEST2\printer\software\memory\buffer\hamster.HS
+HS_output_ext = .pdf

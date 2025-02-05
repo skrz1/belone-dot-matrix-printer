@@ -1,0 +1,1 @@
+Here buffer images are stored.

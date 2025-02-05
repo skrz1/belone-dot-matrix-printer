@@ -3,23 +3,40 @@ import numpy as np
 from fpdf import FPDF
 import os
 import fitz
-from pathlib import Path
+import sys
 
 
-print("import")
 #############################################
 # import
+
+application_path = os.path.dirname(sys.executable) # absolute path of exe
+#application_path = os.path.dirname(__file__) # absolute path of python
+
 # import system data
+
+# folders names
+paper_drawer_folder = "paper_drawer"
+system_folder = "system"
+fontpack_folder = "fontpack"
+memory_folder = "memory"
+buffer_folder = "buffer"
+
+
+# path to paper drawer
+printer_folder, tail = os.path.split(application_path)
+main_folder, tail = os.path.split(printer_folder)
+path2paper_drawer = os.path.join(main_folder, paper_drawer_folder)
 
 # default system values
 contrast = 0
 brightness = 0
 invert = 0
 power = 1
-filename = 0
+busy = 1
+DPI = 600
 
 # read txt system memory
-with open("system/system.txt", "r") as file:
+with open(os.path.join(application_path, system_folder, "system.txt"), "r") as file:
     for line in file:
         # strip whitespace from the line
         line = line.strip()
@@ -31,20 +48,29 @@ with open("system/system.txt", "r") as file:
 
         # assign memory variable
         if key == "contrast":
-            contrast = int(value)
+            if float(value) < 0:
+                contrast = float(value)/5 + 1
+            else:
+                contrast = float(value) + 1
         elif key == "brightness":
-            brightness = int(value)
+            brightness = -float(value)/10
         elif key == "invert":
             invert = int(value)
         elif key == "power":
             power = int(value)
-
+        elif key == "DPI":
+            DPI = int(value)
 
 if power != 1:
     exit()
 
+
 # import image data
-with open("system/command.txt", "r") as file:
+
+filename = 0
+
+# read txt image data
+with open(os.path.join(application_path, system_folder, "command.txt"), "r") as file:
     for line in file:
         # strip whitespace from the line
         line = line.strip()
@@ -58,7 +84,8 @@ with open("system/command.txt", "r") as file:
         if key == "filename":
             filename = str(value)
 
-image_path = cv2.imread("buffer/" + str(filename))
+
+image_path = cv2.imread(os.path.join(application_path, memory_folder, buffer_folder, filename))
 grayImage = cv2.cvtColor(image_path, cv2.COLOR_BGR2GRAY)
 
 #############################################
@@ -86,21 +113,19 @@ dots_count_odd_ver = int(mm_height/dot_shift) # number of dots in one odd column
 
 def grayscale2needle(grayscale):
     if invert == 1:
-        blackscale = float(grayscale)
-        corr_blackscale = blackscale ** 0.6  # gamma correction
-        corr_blackscale = corr_blackscale * (255 / (255 ** 0.6))
+        blackscale = grayscale/255
     else:
-        blackscale = 1-grayscale/255
-        corr_blackscale = blackscale ** 0.6  # gamma correction
+        blackscale = 1 - grayscale / 255
 
-
-        #blackscale = float(255-grayscale)
-        #corr_blackscale = blackscale**0.6 # gamma correction
-        #corr_blackscale = corr_blackscale * (255/(255**0.6))
+    blackscale = contrast*(blackscale-0.5) + 0.5 + brightness
+    if blackscale < 0:
+        blackscale = 0
+    elif blackscale > 1:
+        blackscale = 1
+    corr_blackscale = blackscale ** 0.6  # gamma correction
 
     formula = corr_blackscale * 8
-    #formula = corr_blackscale/31.875
-    needle_numb = int(round(formula))
+    needle_numb = int(round(formula, 1))
     return needle_numb
 
 # needles matrix even
@@ -202,25 +227,22 @@ def get_unique_filename(folder_path, choosen_filename):
         counter += 1
     return unique_filename
 
-pdf.output("buffer/buffer.pdf") # creating pdf buffer file
+pdf.output(os.path.join(application_path, memory_folder, buffer_folder, "buffer.pdf")) # creating pdf buffer file
 
 
-drawer_path = str("../../paper_drawer/")
-unique_filename = get_unique_filename(drawer_path, str(filename) + ".png")
-print(unique_filename)
-file_path = str("../../paper_drawer/" + unique_filename)
+unique_filename_png = get_unique_filename(path2paper_drawer, str(filename))
+file_path = os.path.join(path2paper_drawer, unique_filename_png)
 
 # export pdf to png
-pdf_path = str("buffer/buffer.pdf")
+pdf_path = os.path.join(application_path, memory_folder, buffer_folder, "buffer.pdf")
 pdf_document = fitz.open(pdf_path)
 
 for page_num in range(len(pdf_document)):
     page = pdf_document[page_num]
-    pix = page.get_pixmap(dpi=600)
+    pix = page.get_pixmap(dpi=DPI)
     output_path = file_path
     pix.save(output_path)
 
 pdf_document.close()
-print("zapisanie")
-os.remove("buffer/buffer.pdf")
-#os.remove("buffer/" + str(filename))
+os.remove(os.path.join(application_path, memory_folder, buffer_folder, "buffer.pdf"))
+os.remove(os.path.join(application_path, memory_folder, buffer_folder, filename))
